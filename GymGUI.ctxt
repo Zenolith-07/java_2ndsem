@@ -1,0 +1,15 @@
+#BlueJ class context
+comment0.target=GymGUI
+comment1.params=
+comment1.target=GymGUI()
+comment2.params=year\ month\ day
+comment2.target=java.lang.String\ getSelectedDate(javax.swing.JComboBox,\ javax.swing.JComboBox,\ javax.swing.JComboBox)
+comment3.params=
+comment3.target=java.lang.String\ getSelectedGender()
+comment4.params=one
+comment4.target=void\ actionPerformed(java.awt.event.ActionEvent)
+comment5.params=id
+comment5.target=GymMember\ findMember(int)
+comment6.params=args
+comment6.target=void\ main(java.lang.String[])
+numComments=7
