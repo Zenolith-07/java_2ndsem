@@ -1,0 +1,24 @@
+#BlueJ class context
+comment0.target=PremiumMember
+comment0.text=\r\n\ Write\ a\ description\ of\ class\ PremiumMember\ here.\r\n\r\n\ @author\ (your\ name)\r\n\ @version\ (a\ version\ number\ or\ a\ date)\r\n
+comment1.params=id\ name\ location\ phone\ email\ gender\ DOB\ membershipStartDate\ personalTrainer
+comment1.target=PremiumMember(int,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String,\ java.lang.String)
+comment10.params=
+comment10.target=void\ display()
+comment2.params=
+comment2.target=double\ getPremiumCharge()
+comment3.params=
+comment3.target=java.lang.String\ getPersonalTrainer()
+comment4.params=
+comment4.target=boolean\ getIsFullPayment()
+comment5.params=
+comment5.target=double\ getDiscountAmount()
+comment6.params=
+comment6.target=void\ markAttendance()
+comment7.params=paidAmount
+comment7.target=java.lang.String\ payDueAmount(double)
+comment8.params=
+comment8.target=void\ calculateDiscount()
+comment9.params=
+comment9.target=void\ revertPremiumMember()
+numComments=11
