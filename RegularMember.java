@@ -1,3 +1,4 @@
+import java.io.Serializable;
 
 /**
  * Write a description of class RegularMember here.
@@ -5,7 +6,7 @@
  * @author (your name)
  * @version (a version number or a date)
  */
-public class RegularMember extends GymMember {
+public class RegularMember extends GymMember implements Serializable {
     private final int AttendanceLimit;
     private boolean isEligibleForUpgrade;
     private String removalReason;
@@ -58,7 +59,8 @@ public class RegularMember extends GymMember {
    
     // Method to get any desired plan price.
     public double getPlanPrice(String plan){
-        switch(plan){
+        if (plan == null) return -1; // Handle null input
+        switch(plan.toLowerCase()){ // Convert to lowercase for case-insensitive matching
             case "basic": //Basic plan
                 return 6500;
             case "standard": // Standard plan
@@ -72,6 +74,11 @@ public class RegularMember extends GymMember {
 
     // Method to upgrade plan
     public String upgradePlan(String newPlan){
+        if (newPlan == null || newPlan.trim().isEmpty()) {
+            System.out.println("Upgrade not eligible, new plan name is invalid.");
+            return "invalid plan name";
+        }
+
         if(getAttendance()>=AttendanceLimit){
             isEligibleForUpgrade=true;
             System.out.println("The member is eligible for upgrade.");
@@ -80,12 +87,14 @@ public class RegularMember extends GymMember {
         if (this.isEligibleForUpgrade==false){
             System.out.println( "The member is not eligible for upgrade.");
         }
-        if (this.plan.equals(newPlan)){
+        if (this.plan.equalsIgnoreCase(newPlan)){
             System.out.println("The upgrade not eligible, same plan is chosen");
+            return "same plan chosen";
         }
         double newPlanPrice= getPlanPrice(newPlan);
         if (newPlanPrice==-1){
-            System.out.println("Invalid plan selected");
+            System.out.println("Invalid plan selected: " + newPlan + ". Defaulting to basic or keeping current.");
+            return "invalid plan selected";
         }
        
         //Updating the plan and price.
@@ -112,5 +121,17 @@ public class RegularMember extends GymMember {
         if(getRemovalReason()!=""){
             System.out.println("Removal reason: "+getRemovalReason());
         }
+    }
+
+    @Override
+    public String getDisplayInfo() {
+        StringBuilder sb = new StringBuilder(super.getDisplayInfo());
+        sb.append("Plan: ").append(this.plan).append("\n");
+        sb.append("Price: ").append(this.price).append("\n");
+        sb.append("Referral Source: ").append(getReferralSource()).append("\n");
+        if (getRemovalReason() != null && !getRemovalReason().isEmpty()) {
+            sb.append("Removal reason: ").append(getRemovalReason()).append("\n");
+        }
+        return sb.toString();
     }
 }

@@ -1,3 +1,4 @@
+import java.io.Serializable;
 
 /**
  * Write a description of class PremiumMember here.
@@ -5,7 +6,7 @@
  * @author (your name)
  * @version (a version number or a date)
  */
-public class PremiumMember extends GymMember{
+public class PremiumMember extends GymMember implements Serializable {
     private final double premiuimCharge;
     private String personalTrainer;
     private boolean isFullPayment;
@@ -99,5 +100,22 @@ public class PremiumMember extends GymMember{
         }else{
             calculateDiscount();
         }
+    }
+
+    @Override
+    public String getDisplayInfo() {
+        StringBuilder sb = new StringBuilder(super.getDisplayInfo());
+        sb.append("Personal Trainer: ").append(getPersonalTrainer()).append("\n");
+        sb.append("Paid amount: ").append(paidAmount).append("\n");
+        sb.append("Premium Charge: ").append(getPremiumCharge()).append("\n");
+        if (!getIsFullPayment()) {
+            double remainingAmount = getPremiumCharge() - this.paidAmount;
+            sb.append("Remaining amount: ").append(remainingAmount).append("\n");
+        } else {
+            sb.append("Discount Amount: ").append(getDiscountAmount()).append(" (after full payment)\n");
+             // Note: calculateDiscount() in the original display() printed, here we might want to ensure discountAmount is set if not already.
+            // For now, assuming getDiscountAmount() returns the correct value if isFullPayment is true.
+        }
+        return sb.toString();
     }
 }

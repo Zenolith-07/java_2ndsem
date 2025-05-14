@@ -1,3 +1,4 @@
+import java.io.Serializable;
 
 /**
  * Write a description of class GymMember here.
@@ -7,7 +8,7 @@
  */
 
 // Abstract class GymMember
-public abstract class GymMember{
+public abstract class GymMember implements Serializable {
     // Protetcted attributes
     protected int id;
     protected String name;
@@ -133,5 +134,23 @@ public abstract class GymMember{
         System.out.println("Attendance: " + getAttendance()); // Print attendance count
         System.out.println("Loyalty Points: " + getLoyaltyPoints()); // Print loyalty points
         System.out.println("Active Status: " + isActiveStatus()); // Print membership status
+    }
+
+    // Method to get member details as a String
+    public String getDisplayInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Member Details:\n");
+        sb.append("ID: ").append(getId()).append("\n");
+        sb.append("Name: ").append(getName()).append("\n");
+        sb.append("Location: ").append(getLocation()).append("\n");
+        sb.append("Phone: ").append(getPhone()).append("\n");
+        sb.append("Email: ").append(getEmail()).append("\n");
+        sb.append("Gender: ").append(getGender()).append("\n");
+        sb.append("DOB: ").append(getDOB()).append("\n");
+        sb.append("Membership Start Date: ").append(getMembershipStartDate()).append("\n");
+        sb.append("Attendance: ").append(getAttendance()).append("\n");
+        sb.append("Loyalty Points: ").append(getLoyaltyPoints()).append("\n");
+        sb.append("Active Status: ").append(isActiveStatus()).append("\n");
+        return sb.toString();
     }
 }
