@@ -355,17 +355,20 @@ public class GymGUI implements ActionListener
         premiumSpecificPanel.setVisible(false); // Initially hidden
 
         // Action listeners for member type radio buttons
-        ActionListener memberTypeListener = e -> {
-            if (regularTypeRadioButton.isSelected()) {
-                regularSpecificPanel.setVisible(true);
-                premiumSpecificPanel.setVisible(false);
-            } else {
-                regularSpecificPanel.setVisible(false);
-                premiumSpecificPanel.setVisible(true);
+        ActionListener memberTypeListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (regularTypeRadioButton.isSelected()) {
+                    regularSpecificPanel.setVisible(true);
+                    premiumSpecificPanel.setVisible(false);
+                } else {
+                    regularSpecificPanel.setVisible(false);
+                    premiumSpecificPanel.setVisible(true);
+                }
+                addMemberDialog.pack(); // Adjust dialog size
+                addMemberDialog.setSize(700, addMemberDialog.getHeight()); // Keep width, adjust height
+                addMemberDialog.setLocationRelativeTo(mainFrame);
             }
-            addMemberDialog.pack(); // Adjust dialog size
-            addMemberDialog.setSize(700, addMemberDialog.getHeight()); // Keep width, adjust height
-            addMemberDialog.setLocationRelativeTo(mainFrame);
         };
         regularTypeRadioButton.addActionListener(memberTypeListener);
         premiumTypeRadioButton.addActionListener(memberTypeListener);
@@ -418,7 +421,12 @@ public class GymGUI implements ActionListener
         viewMembersDialog.add(scrollPane, BorderLayout.CENTER);
 
         JButton closeViewButton = new JButton("Close");
-        closeViewButton.addActionListener(e -> viewMembersDialog.setVisible(false));
+        closeViewButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                viewMembersDialog.setVisible(false);
+            }
+        });
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.add(closeViewButton);
         viewMembersDialog.add(buttonPanel, BorderLayout.SOUTH);
@@ -1045,6 +1053,11 @@ public class GymGUI implements ActionListener
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new GymGUI());
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new GymGUI();
+            }
+        });
     }
 }
