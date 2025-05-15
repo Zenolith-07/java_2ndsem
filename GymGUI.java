@@ -53,7 +53,7 @@ public class GymGUI implements ActionListener
     private JFrame mainFrame;
     private JPanel mainButtons; // This will become the container for buttons, placed on ImagePanel
     private JLabel welcomeText;
-    private JButton addMemberButton, activateButton, deactivateButton, markAttendanceButton, viewAllMembersButton;
+    private JButton addMemberButton, activateButton, deactivateButton, markAttendanceButton, viewAllMembersButton, changeMembershipTypeButton, deleteMemberButton, viewDuePaymentsButton;
 
     // Add Member Dialog
     private JDialog addMemberDialog;
@@ -142,6 +142,7 @@ public class GymGUI implements ActionListener
         gbcMain.fill = GridBagConstraints.HORIZONTAL;
         gbcMain.ipadx = 40; 
         gbcMain.ipady = 15; 
+        gbcMain.gridwidth = 1; // Ensure all buttons occupy one cell wide by default
 
         addMemberButton = new JButton("Add New Member");
         addMemberButton.setFont(new Font("Georgia", Font.BOLD, 14));
@@ -150,19 +151,19 @@ public class GymGUI implements ActionListener
         gbcMain.gridy = 0;
         buttonContainerPanel.add(addMemberButton, gbcMain);
 
+        deactivateButton = new JButton("Deactivate Membership"); // Moved to be next to Add
+        deactivateButton.setFont(new Font("Georgia", Font.BOLD, 14));
+        deactivateButton.addActionListener(this);
+        gbcMain.gridx = 1;
+        gbcMain.gridy = 0;
+        buttonContainerPanel.add(deactivateButton, gbcMain);
+
         activateButton = new JButton("Activate Membership");
         activateButton.setFont(new Font("Georgia", Font.BOLD, 14));
         activateButton.addActionListener(this);
         gbcMain.gridx = 0;
         gbcMain.gridy = 1;
         buttonContainerPanel.add(activateButton, gbcMain);
-
-        deactivateButton = new JButton("Deactivate Membership");
-        deactivateButton.setFont(new Font("Georgia", Font.BOLD, 14));
-        deactivateButton.addActionListener(this);
-        gbcMain.gridx = 1;
-        gbcMain.gridy = 0;
-        buttonContainerPanel.add(deactivateButton, gbcMain);
 
         markAttendanceButton = new JButton("Mark Attendance");
         markAttendanceButton.setFont(new Font("Georgia", Font.BOLD, 14));
@@ -176,9 +177,32 @@ public class GymGUI implements ActionListener
         viewAllMembersButton.addActionListener(this);
         gbcMain.gridx = 0;
         gbcMain.gridy = 2; 
-        gbcMain.gridwidth = 2; 
+        // gbcMain.gridwidth = 1; // Already set globally
         buttonContainerPanel.add(viewAllMembersButton, gbcMain);
-        gbcMain.gridwidth = 1; 
+        
+        changeMembershipTypeButton = new JButton("Change Membership Type");
+        changeMembershipTypeButton.setFont(new Font("Georgia", Font.BOLD, 14));
+        changeMembershipTypeButton.addActionListener(this);
+        gbcMain.gridx = 1; // Moved to second column
+        gbcMain.gridy = 2; // Same row as View All Members
+        // gbcMain.gridwidth = 1; 
+        buttonContainerPanel.add(changeMembershipTypeButton, gbcMain);
+
+        deleteMemberButton = new JButton("Delete Member");
+        deleteMemberButton.setFont(new Font("Georgia", Font.BOLD, 14));
+        deleteMemberButton.addActionListener(this);
+        gbcMain.gridx = 0; 
+        gbcMain.gridy = 3; // New row
+        // gbcMain.gridwidth = 1; 
+        buttonContainerPanel.add(deleteMemberButton, gbcMain);
+        
+        viewDuePaymentsButton = new JButton("View Due Payments");
+        viewDuePaymentsButton.setFont(new Font("Georgia", Font.BOLD, 14));
+        viewDuePaymentsButton.addActionListener(this);
+        gbcMain.gridx = 1; // Moved to second column
+        gbcMain.gridy = 3; // Same row as Delete Member
+        // gbcMain.gridwidth = 1;
+        buttonContainerPanel.add(viewDuePaymentsButton, gbcMain);
 
         // Initialize Add Member Dialog (but don't show it yet)
         createAddMemberDialog();
@@ -468,6 +492,12 @@ public class GymGUI implements ActionListener
                 default:
                     break;
             }
+        } else if (e.getSource() == changeMembershipTypeButton) {
+            handleChangeMembershipType();
+        } else if (e.getSource() == deleteMemberButton) {
+            handleDeleteMember();
+        } else if (e.getSource() == viewDuePaymentsButton) {
+            handleViewDuePayments();
         }
     }
 
@@ -559,14 +589,14 @@ public class GymGUI implements ActionListener
 
                 RegularMember rm = new RegularMember(id, name, location, phone, email, gender, dob, msDate, referralSource);
                 String upgradeResult = rm.upgradePlan(plan);
-                if (!"plan upgraded successfully".equalsIgnoreCase(upgradeResult) && !"same plan chosen".equalsIgnoreCase(upgradeResult)) {
-                    // If upgradePlan indicated an issue (other than 'same plan chosen' which is acceptable for initial setup if default is selected)
-                    // we might want to inform the user or log, but the member object is already created.
-                    // For now, the console messages from RegularMember will suffice.
-                    // If it was "invalid plan selected", the price in rm might be the old default.
-                    System.out.println("GymGUI: Note - Plan upgrade message: " + upgradeResult);
+                // Validate 40% payment
+                double planPrice = rm.getPrice();
+                if (paidAmount < (0.4 * planPrice)) {
+                    JOptionPane.showMessageDialog(addMemberDialog, "Minimum 40% of the plan price (Rs. " + String.format("%.2f", 0.4 * planPrice) + ") must be paid at registration.", "Payment Error", JOptionPane.WARNING_MESSAGE);
+                    return;
                 }
-                
+                rm.payDueAmount(paidAmount); // Process initial payment
+
                 this.list.add(rm);
                this.idlist.add(id);
                 JOptionPane.showMessageDialog(addMemberDialog, "Regular Member added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -579,8 +609,15 @@ public class GymGUI implements ActionListener
                 String personalTrainer = trainerField.getText().trim();
 
                 PremiumMember pm = new PremiumMember(id, name, location, phone, email, gender, dob, msDate, personalTrainer);
-                if (paidAmount > 0) {
-                    pm.payDueAmount(paidAmount);
+                // Validate 40% payment
+                double premiumCharge = pm.getPremiumCharge();
+                if (paidAmount < (0.4 * premiumCharge)) {
+                    JOptionPane.showMessageDialog(addMemberDialog, "Minimum 40% of the premium charge (Rs. " + String.format("%.2f", 0.4 * premiumCharge) + ") must be paid at registration.", "Payment Error", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                
+                if (paidAmount > 0) { // This check is now implicitly covered by 40% rule, but good to keep for payDueAmount
+                    pm.payDueAmount(paidAmount); // Process initial payment
                 }
                 
                 this.list.add(pm);
@@ -650,6 +687,287 @@ public class GymGUI implements ActionListener
             }
         }
         return null;
+    }
+
+    private void handleChangeMembershipType() {
+        String idStr = JOptionPane.showInputDialog(mainFrame, "Enter Member ID to change membership type:");
+        if (idStr == null || idStr.trim().isEmpty()) {
+            return; // User cancelled or entered nothing
+        }
+
+        try {
+            int id = Integer.parseInt(idStr.trim());
+            GymMember currentMember = null;
+            int memberIndex = -1;
+
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i).getId() == id) {
+                    currentMember = list.get(i);
+                    memberIndex = i;
+                    break;
+                }
+            }
+
+            if (currentMember == null) {
+                JOptionPane.showMessageDialog(mainFrame, "Member ID not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (currentMember instanceof RegularMember) {
+                RegularMember regularMember = (RegularMember) currentMember;
+                int choice = JOptionPane.showConfirmDialog(mainFrame,
+                        "Member " + regularMember.getName() + " is currently a Regular Member.\\nChange to Premium Membership?",
+                        "Confirm Change", JOptionPane.YES_NO_OPTION);
+
+                if (choice == JOptionPane.YES_OPTION) {
+                    String trainerName = JOptionPane.showInputDialog(mainFrame, "Enter Personal Trainer name for Premium Member (optional, default will be used if empty):");
+                    if (trainerName == null) return; // User cancelled
+
+                    PremiumMember newPremiumMember = new PremiumMember(
+                            regularMember.getId(), regularMember.getName(), regularMember.getLocation(),
+                            regularMember.getPhone(), regularMember.getEmail(), regularMember.getGender(),
+                            regularMember.getDOB(), regularMember.getMembershipStartDate(),
+                            trainerName.trim().isEmpty() ? "Kiran Rai" : trainerName.trim() // Use default if empty
+                    );
+                    // Copy state like activeStatus, attendance, loyalty points
+                    if (regularMember.isActiveStatus()) newPremiumMember.activateMembership(); else newPremiumMember.deactivateMembership(); // Preserve active status
+                    newPremiumMember.attendance = regularMember.getAttendance();
+                    newPremiumMember.loyaltyPoints = regularMember.getLoyaltyPoints();
+                    // Premium members might have paid amounts, set to 0 initially for a new premium conversion
+                    // Or, we could ask if they want to make an initial payment. For simplicity, starting with 0.
+
+                    list.set(memberIndex, newPremiumMember);
+                    JOptionPane.showMessageDialog(mainFrame, "Membership for ID " + id + " changed to Premium.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } else if (currentMember instanceof PremiumMember) {
+                PremiumMember premiumMember = (PremiumMember) currentMember;
+                int choice = JOptionPane.showConfirmDialog(mainFrame,
+                        "Member " + premiumMember.getName() + " is currently a Premium Member.\\nChange to Regular Membership?",
+                        "Confirm Change", JOptionPane.YES_NO_OPTION);
+
+                if (choice == JOptionPane.YES_OPTION) {
+                    // For RegularMember, we need referralSource and plan
+                    String referralSource = JOptionPane.showInputDialog(mainFrame, "Enter Referral Source for Regular Member:");
+                    if (referralSource == null) return; // User cancelled
+
+                    String[] plans = {"Basic", "Standard", "Deluxe"};
+                    String selectedPlan = (String) JOptionPane.showInputDialog(mainFrame,
+                            "Select Plan for Regular Member:", "Select Plan",
+                            JOptionPane.QUESTION_MESSAGE, null, plans, plans[0]);
+                    if (selectedPlan == null) return; // User cancelled
+
+                    RegularMember newRegularMember = new RegularMember(
+                            premiumMember.getId(), premiumMember.getName(), premiumMember.getLocation(),
+                            premiumMember.getPhone(), premiumMember.getEmail(), premiumMember.getGender(),
+                            premiumMember.getDOB(), premiumMember.getMembershipStartDate(),
+                            referralSource.trim()
+                    );
+                    newRegularMember.upgradePlan(selectedPlan); // Set the plan and price
+
+                    // Copy state like activeStatus, attendance, loyalty points
+                    if (premiumMember.isActiveStatus()) newRegularMember.activateMembership(); else newRegularMember.deactivateMembership(); // Preserve active status
+                    newRegularMember.attendance = premiumMember.getAttendance();
+                    newRegularMember.loyaltyPoints = premiumMember.getLoyaltyPoints();
+                    // Regular members don't have a 'paidAmount' in the same way as premium,
+                    // their 'price' is set by the plan.
+
+                    list.set(memberIndex, newRegularMember);
+                    JOptionPane.showMessageDialog(mainFrame, "Membership for ID " + id + " changed to Regular.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(mainFrame, "Unknown member type for ID " + id + ".", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(mainFrame, "Invalid ID format. Please enter a number.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(mainFrame, "An error occurred during membership type change: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void handleDeleteMember() {
+        String idStr = JOptionPane.showInputDialog(mainFrame, "Enter Member ID to delete:");
+        if (idStr == null || idStr.trim().isEmpty()) {
+            return; // User cancelled or entered nothing
+        }
+
+        try {
+            int idToDelete = Integer.parseInt(idStr.trim());
+
+            GymMember memberToDelete = null;
+            int memberIndex = -1;
+
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i).getId() == idToDelete) {
+                    memberToDelete = list.get(i);
+                    memberIndex = i;
+                    break;
+                }
+            }
+
+            if (memberToDelete == null) {
+                JOptionPane.showMessageDialog(mainFrame, "Member ID not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int confirm = JOptionPane.showConfirmDialog(mainFrame,
+                    "Are you sure you want to delete member: " + memberToDelete.getName() + " (ID: " + idToDelete + ")?",
+                    "Confirm Deletion",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                list.remove(memberIndex);
+                idlist.remove(Integer.valueOf(idToDelete)); // Remove the ID from idlist as well
+                JOptionPane.showMessageDialog(mainFrame, "Member " + memberToDelete.getName() + " deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(mainFrame, "Invalid ID format. Please enter a numeric ID.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(mainFrame, "An error occurred while deleting the member: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void handleViewDuePayments() {
+        StringBuilder dueInfo = new StringBuilder();
+        boolean foundDue = false;
+        dueInfo.append("Members with Outstanding Payments:\n\n");
+
+        for (GymMember member : list) {
+            double totalFee = 0;
+            double paid = 0;
+            boolean isFullyPaid = false;
+            String memberType = "";
+
+            if (member instanceof RegularMember) {
+                RegularMember rm = (RegularMember) member;
+                totalFee = rm.getPrice();
+                paid = rm.getPaidAmount();
+                isFullyPaid = rm.getIsFullPayment();
+                memberType = "Regular";
+            } else if (member instanceof PremiumMember) {
+                PremiumMember pm = (PremiumMember) member;
+                totalFee = pm.getPremiumCharge();
+                paid = pm.getPaidAmount(); // Assuming PremiumMember has getPaidAmount()
+                isFullyPaid = pm.getIsFullPayment();
+                memberType = "Premium";
+            }
+
+            if (!isFullyPaid) {
+                foundDue = true;
+                double remainingAmount = totalFee - paid;
+                dueInfo.append("ID: ").append(member.getId()).append("\n");
+                dueInfo.append("Name: ").append(member.getName()).append("\n");
+                dueInfo.append("Type: ").append(memberType).append("\n");
+                dueInfo.append("Total Fee: Rs. ").append(String.format("%.2f", totalFee)).append("\n");
+                dueInfo.append("Amount Paid: Rs. ").append(String.format("%.2f", paid)).append("\n");
+                dueInfo.append("Remaining Due: Rs. ").append(String.format("%.2f", remainingAmount)).append("\n");
+                dueInfo.append("-------------------------------------\n");
+            }
+        }
+
+        if (!foundDue) {
+            dueInfo.append("No members currently have outstanding payments.\n");
+        }
+
+        JTextArea textArea = new JTextArea(dueInfo.toString());
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(500, 400)); // Set preferred size for the scroll pane
+
+        JOptionPane.showMessageDialog(mainFrame, scrollPane, "Due Payments Information", JOptionPane.INFORMATION_MESSAGE);
+
+        // After showing due payments, ask if user wants to make a payment
+        int makePaymentChoice = JOptionPane.showConfirmDialog(mainFrame, 
+                                                            "Would you like to make a payment for a member?", 
+                                                            "Make a Payment?", 
+                                                            JOptionPane.YES_NO_OPTION);
+
+        if (makePaymentChoice == JOptionPane.YES_OPTION) {
+            String idStrToPay = JOptionPane.showInputDialog(mainFrame, "Enter Member ID to make a payment for:");
+            if (idStrToPay == null || idStrToPay.trim().isEmpty()) {
+                return; // User cancelled
+            }
+
+            try {
+                int memberIdToPay = Integer.parseInt(idStrToPay.trim());
+                GymMember memberToPay = findMember(memberIdToPay);
+
+                if (memberToPay == null) {
+                    JOptionPane.showMessageDialog(mainFrame, "Member ID not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                double currentPaid = 0;
+                double totalFee = 0;
+                boolean isCurrentlyFullPayment = false;
+                String paymentResult = "";
+
+                if (memberToPay instanceof RegularMember) {
+                    RegularMember rm = (RegularMember) memberToPay;
+                    currentPaid = rm.getPaidAmount();
+                    totalFee = rm.getPrice();
+                    isCurrentlyFullPayment = rm.getIsFullPayment();
+                    if (isCurrentlyFullPayment) {
+                        JOptionPane.showMessageDialog(mainFrame, "Member " + rm.getName() + " has no outstanding dues.", "Payment Info", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    String amountToPayStr = JOptionPane.showInputDialog(mainFrame, 
+                        "Member: " + rm.getName() + " (Regular)\\n" +
+                        "Total Fee: Rs. " + String.format("%.2f", totalFee) + "\\n" +
+                        "Paid: Rs. " + String.format("%.2f", currentPaid) + "\\n" +
+                        "Remaining Due: Rs. " + String.format("%.2f", (totalFee - currentPaid)) + "\\n\\n" +
+                        "Enter amount to pay:");
+                    if (amountToPayStr == null || amountToPayStr.trim().isEmpty()) return; // User cancelled
+                    double paymentAmount = Double.parseDouble(amountToPayStr.trim());
+                    if (paymentAmount <= 0) {
+                        JOptionPane.showMessageDialog(mainFrame, "Payment amount must be positive.", "Error", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    paymentResult = rm.payDueAmount(paymentAmount);
+                    JOptionPane.showMessageDialog(mainFrame, paymentResult, "Payment Status", JOptionPane.INFORMATION_MESSAGE);
+
+                } else if (memberToPay instanceof PremiumMember) {
+                    PremiumMember pm = (PremiumMember) memberToPay;
+                    currentPaid = pm.getPaidAmount();
+                    totalFee = pm.getPremiumCharge();
+                    isCurrentlyFullPayment = pm.getIsFullPayment();
+                     if (isCurrentlyFullPayment) {
+                        JOptionPane.showMessageDialog(mainFrame, "Member " + pm.getName() + " has no outstanding dues.", "Payment Info", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    String amountToPayStr = JOptionPane.showInputDialog(mainFrame, 
+                        "Member: " + pm.getName() + " (Premium)\\n" +
+                        "Total Fee: Rs. " + String.format("%.2f", totalFee) + "\\n" +
+                        "Paid: Rs. " + String.format("%.2f", currentPaid) + "\\n" +
+                        "Remaining Due: Rs. " + String.format("%.2f", (totalFee - currentPaid)) + "\\n\\n" +
+                        "Enter amount to pay:");
+                    if (amountToPayStr == null || amountToPayStr.trim().isEmpty()) return; // User cancelled
+                    double paymentAmount = Double.parseDouble(amountToPayStr.trim());
+                     if (paymentAmount <= 0) {
+                        JOptionPane.showMessageDialog(mainFrame, "Payment amount must be positive.", "Error", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    paymentResult = pm.payDueAmount(paymentAmount);
+                    JOptionPane.showMessageDialog(mainFrame, paymentResult, "Payment Status", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(mainFrame, "Cannot process payment for unknown member type.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                // Optionally, you might want to refresh the due payments list or just inform the user.
+                JOptionPane.showMessageDialog(mainFrame, "Payment processed. You may need to reopen 'View Due Payments' to see updated details.", "Info", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(mainFrame, "Invalid ID or amount format. Please enter numeric values.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(mainFrame, "An error occurred while processing payment: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
+        }
     }
 
     private void displayAllMembers(String memberTypeToShow) {

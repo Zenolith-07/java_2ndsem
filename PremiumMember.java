@@ -36,7 +36,15 @@ public class PremiumMember extends GymMember implements Serializable {
         return this.isFullPayment;
     }
     public double getDiscountAmount(){
+        // Ensure discount is calculated if conditions are met and it hasn't been set.
+        if (this.isFullPayment && this.discountAmount == 0) {
+            calculateDiscount();
+        }
         return this.discountAmount;
+    }
+   
+    public double getPaidAmount() { // Added missing accessor
+        return this.paidAmount;
     }
    
     //Overriding abstratc method markattendance.
@@ -72,9 +80,11 @@ public class PremiumMember extends GymMember implements Serializable {
    
     //method to calculate discount.
     public void calculateDiscount(){
-        if (isFullPayment==true){
-            this.discountAmount=0.10*getPremiumCharge(); 
-            System.out.println("Discount amount: "+getDiscountAmount());
+        if (isFullPayment == true){
+            this.discountAmount = 0.10 * getPremiumCharge(); // 10% discount
+            // System.out.println("Discount amount calculated: "+this.discountAmount); // Optional: for logging
+        } else {
+            this.discountAmount = 0; // No discount if not fully paid
         }
     }
    
@@ -107,14 +117,19 @@ public class PremiumMember extends GymMember implements Serializable {
         StringBuilder sb = new StringBuilder(super.getDisplayInfo());
         sb.append("Personal Trainer: ").append(getPersonalTrainer()).append("\n");
         sb.append("Paid amount: ").append(paidAmount).append("\n");
-        sb.append("Premium Charge: ").append(getPremiumCharge()).append("\n");
+        sb.append("Premium Charge: ").append(String.format("%.2f", getPremiumCharge())).append("\n");
         if (!getIsFullPayment()) {
             double remainingAmount = getPremiumCharge() - this.paidAmount;
-            sb.append("Remaining amount: ").append(remainingAmount).append("\n");
+            sb.append("Remaining amount: ").append(String.format("%.2f", remainingAmount)).append("\n");
         } else {
-            sb.append("Discount Amount: ").append(getDiscountAmount()).append(" (after full payment)\n");
-             // Note: calculateDiscount() in the original display() printed, here we might want to ensure discountAmount is set if not already.
-            // For now, assuming getDiscountAmount() returns the correct value if isFullPayment is true.
+            // Ensure discount is calculated before displaying if fully paid
+            if (this.discountAmount == 0) { // Recalculate if not set, though payDueAmount should handle it
+                calculateDiscount();
+            }
+            sb.append("Status: Fully Paid\n");
+            if (getDiscountAmount() > 0) {
+                 sb.append("Discount Applied (10%): ").append(String.format("%.2f", getDiscountAmount())).append("\n");
+            }
         }
         return sb.toString();
     }

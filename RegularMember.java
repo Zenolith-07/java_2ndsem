@@ -13,6 +13,9 @@ public class RegularMember extends GymMember implements Serializable {
     private String referralSource;
     private String plan;
     private double price;
+    private double paidAmount;
+    private boolean isFullPayment;
+    private double discountAmount;
    
     //Constructor class.
     public RegularMember(int id, String name, String location, String phone, String email, String gender, String DOB, String membershipStartDate, String referralSource){
@@ -26,6 +29,9 @@ public class RegularMember extends GymMember implements Serializable {
         this.price=6500;
         this.removalReason=""; 
         this.referralSource=referralSource;
+        this.paidAmount = 0;
+        this.isFullPayment = false;
+        this.discountAmount = 0;
     }
    
     // Creating accessor method
@@ -46,6 +52,19 @@ public class RegularMember extends GymMember implements Serializable {
     }
     public double getPrice(){ 
         return this.price;
+    }
+    public double getPaidAmount() {
+        return this.paidAmount;
+    }
+    public boolean getIsFullPayment() {
+        return this.isFullPayment;
+    }
+    public double getDiscountAmount() {
+        // Ensure discount is calculated if conditions are met and it hasn't been set.
+        if (this.isFullPayment && this.discountAmount == 0) {
+            calculateDiscount();
+        }
+        return this.discountAmount;
     }
    
     //Implementing the abstract method in markAttendance().
@@ -100,6 +119,10 @@ public class RegularMember extends GymMember implements Serializable {
         //Updating the plan and price.
         this.plan=newPlan;
         this.price=newPlanPrice;
+        this.paidAmount = 0;
+        this.isFullPayment = false;
+        this.discountAmount = 0;
+        System.out.println("Plan upgraded. Please make payment for the new plan: " + newPlan);
         return "plan upgraded successfully";
     }
    
@@ -111,6 +134,9 @@ public class RegularMember extends GymMember implements Serializable {
         this.price=6500;
         this.loyaltyPoints=0.0;
         this.attendance=0;
+        this.paidAmount = 0;
+        this.isFullPayment = false;
+        this.discountAmount = 0;
         System.out.println("Member reverted to basic plan. Removal reason: "+removalReason);
     }
     @Override
@@ -127,11 +153,50 @@ public class RegularMember extends GymMember implements Serializable {
     public String getDisplayInfo() {
         StringBuilder sb = new StringBuilder(super.getDisplayInfo());
         sb.append("Plan: ").append(this.plan).append("\n");
-        sb.append("Price: ").append(this.price).append("\n");
+        sb.append("Price: ").append(String.format("%.2f", this.price)).append("\n");
+        sb.append("Paid Amount: ").append(String.format("%.2f", getPaidAmount())).append("\n");
+        if (!getIsFullPayment()) {
+            sb.append("Remaining Amount: ").append(String.format("%.2f", (this.price - getPaidAmount()))).append("\n");
+        } else {
+            sb.append("Status: Fully Paid\n");
+            if (getDiscountAmount() > 0) {
+                sb.append("Discount Applied: ").append(String.format("%.2f", getDiscountAmount())).append("\n");
+            }
+        }
         sb.append("Referral Source: ").append(getReferralSource()).append("\n");
         if (getRemovalReason() != null && !getRemovalReason().isEmpty()) {
             sb.append("Removal reason: ").append(getRemovalReason()).append("\n");
         }
         return sb.toString();
+    }
+
+    // Method to calculate discount.
+    public void calculateDiscount() {
+        if (this.isFullPayment) {
+            this.discountAmount = 0.05 * this.price; // 5% discount for full payment
+            System.out.println("5% discount applied: " + this.discountAmount);
+        } else {
+            this.discountAmount = 0;
+        }
+    }
+
+    // Method to pay due amount.
+    public String payDueAmount(double payment) {
+        if (payment <= 0) {
+            return "Payment amount must be positive.";
+        }
+        this.paidAmount += payment;
+        if (this.paidAmount >= this.price) {
+            this.isFullPayment = true;
+            this.paidAmount = this.price; // Ensure paidAmount doesn't exceed price
+            calculateDiscount(); // Calculate discount upon full payment
+            System.out.println("Full payment completed for plan " + this.plan + ". Discount applied if eligible.");
+            return "Full payment completed.";
+        } else {
+            this.isFullPayment = false;
+            double remaining = this.price - this.paidAmount;
+            System.out.println("Payment successful. Remaining amount for plan " + this.plan + ": " + remaining);
+            return "Payment successful. Remaining: " + remaining;
+        }
     }
 }
