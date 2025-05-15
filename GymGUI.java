@@ -188,7 +188,7 @@ public class GymGUI implements ActionListener
         // gbcMain.gridwidth = 1; 
         buttonContainerPanel.add(changeMembershipTypeButton, gbcMain);
 
-        deleteMemberButton = new JButton("Delete Member");
+        deleteMemberButton = new JButton("Revert Member");
         deleteMemberButton.setFont(new Font("Georgia", Font.BOLD, 14));
         deleteMemberButton.addActionListener(this);
         gbcMain.gridx = 0; 
